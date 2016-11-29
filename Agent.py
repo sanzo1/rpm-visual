@@ -434,7 +434,7 @@ class Agent:
 
         else:
             return 'na'
-        # for now flip is not required in 3x3 images
+        # for now flip is not required in 3x3 problems
         '''
         else:
             img1 = imglist[0]
@@ -456,6 +456,6 @@ class Agent:
             dist = self.getDistance(invertimg1, img2)
             return dist
 
-        # for now invert is not required in 3x3 images
+        # for now invert is not required in 3x3 problems
         else:
             return 'na'
