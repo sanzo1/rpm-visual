@@ -477,3 +477,13 @@ class Agent:
         # for now invert is not required in 3x3 problems
         else:
             return 'na'
+
+    # transformation function
+    def getSizeDiff(self, imglist, target):
+        if len(imglist) == 2:
+            # not really applicable for 2x2 matrix but might add logic
+            print("2x2")
+        else:
+            img1 = imglist[0]
+            img2 = imglist[1]
+            img3 = imglist[2]
