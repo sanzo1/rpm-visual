@@ -59,7 +59,7 @@ class Agent:
         ptype = p.problemType
         figures = p.figures
 
-        if "Basic Problem C-02" in pname:
+        if "Basic Problem B-12" in pname:
             print(pname + "\n" + ptype)
 
             if "2x2" in ptype:
@@ -162,7 +162,7 @@ class Agent:
             qna[j] = p[j]
 
     def findPatterns(self, cmpList):
-        transformations = {'fill': '', 'difference': ''}
+        transformations = {'fill': '', 'difference': '', 'flip': '', 'mirror': ''}
         print('------------------------ FINDING PATTERNS ....... --------------------------')
         for a in cmpList:
             imglist = []
@@ -186,6 +186,14 @@ class Agent:
                 diff = self.getDifference(imglist, transformations['difference'])
                 # print("DIFF IS BEING SET TO ---------- %.2f" % (diff))
                 transformations['difference'] = diff
+
+            if transformations['flip'] != 'na':
+                flip = self.getFlipDiff(imglist, transformations['flip'])
+                transformations['flip'] = flip
+
+            if transformations['mirror'] != 'na':
+                mirror = self.getMirrorDiff(imglist, transformations['mirror'])
+                transformations['mirror'] = mirror
 
         print("--------- PATTERNS FOUND ------------")
         print(transformations)
@@ -228,7 +236,7 @@ class Agent:
 
     def comparePatterns(self, giventrans, predictedtrans):
         keylist = giventrans.keys()
-        percentdiff = 0
+        percentdiff = 0.0
 
         for k in keylist:
             givenvalue = giventrans[k]
@@ -240,6 +248,8 @@ class Agent:
             else:
                 percentdiff += 100000
 
+        # print("PROBABILITY OF ANSWER")
+        # print(percentdiff)
         return percentdiff
 
     def rankAnswers(self, dict):
@@ -323,6 +333,7 @@ class Agent:
 
             if perdiff > 10:
                 fr = 'na'
+
             else:
                 fr = ((fr2+fr1)/2)
                 if target != '':
@@ -401,8 +412,8 @@ class Agent:
     def getDistance(self, img1, img2):
         # given two images find euclidean distance between each pixel value (RGB)
         # returns total distance between two images
-        img1 = img1.convert('RGB')
-        img2 = img2.convert('RGB')
+        img1 = img1.convert('1')
+        img2 = img2.convert('1')
         imgd1 = list(img1.getdata())
         imgd2 = list(img2.getdata())
 
@@ -411,7 +422,10 @@ class Agent:
             for i in range(0, len(imgd1)):
                 p1 = imgd1[i]
                 p2 = imgd2[i]
-                distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2)+((p1[2]-p2[2])**2))
+                # below formula for RGB
+                #distance = math.sqrt(((p1[0]-p2[0])**2)+((p1[1]-p2[1])**2)+((p1[2]-p2[2])**2))
+
+                distance = abs(p1-p2)
                 d += distance
             return d
 
@@ -428,8 +442,10 @@ class Agent:
         if len(imglist) == 2:
             img1 = imglist[0]
             img2 = imglist[1]
-            flipimg1 = ImageOps.flip(img1)
-            dist = self.getDistance(flipimg1, img2)
+            newimg1 = img1.convert("1")
+            newimg2 = img2.convert("1")
+            flipimg1 = ImageOps.flip(newimg1)
+            dist = self.getDistance(flipimg1, newimg2)
             return dist
 
         else:
@@ -448,12 +464,14 @@ class Agent:
         '''
 
     # transformation function
-    def getInvertdiff(self, imglist, target):
+    def getMirrorDiff(self, imglist, target):
         if len(imglist) == 2:
             img1 = imglist[0]
             img2 = imglist[1]
-            invertimg1 = ImageOps.invert(img1)
-            dist = self.getDistance(invertimg1, img2)
+            newimg1 = img1.convert("1")
+            newimg2 = img2.convert("1")
+            invertimg1 = ImageOps.mirror(newimg1)
+            dist = self.getDistance(invertimg1, newimg2)
             return dist
 
         # for now invert is not required in 3x3 problems
