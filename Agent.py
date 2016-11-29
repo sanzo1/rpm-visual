@@ -12,6 +12,7 @@
 
 from PIL import Image
 from PIL import ImageChops
+from PIL import ImageOps
 from decimal import Decimal
 
 import numpy
@@ -136,6 +137,7 @@ class Agent:
 
         return 1
 
+    # initial setup function
     def getObjects(self, figurelist):
         for f in figurelist:
             fileuri = figurelist[f].visualFilename
@@ -149,6 +151,7 @@ class Agent:
             '''
             problem[f] = fileuri
 
+    # initial setup function
     def fillQA(self, p, orderQ, orderA):
         for i in orderQ:
             questions[i] = p[i]
@@ -232,7 +235,8 @@ class Agent:
             predictedvalue = predictedtrans[k]
             if givenvalue != 'na' and predictedvalue != 'na':
                 if givenvalue + predictedvalue != 0:
-                    percentdiff += (abs((givenvalue - predictedvalue)) / ((givenvalue + predictedvalue) / 2)) * 100
+                    # percentdiff += (abs((givenvalue - predictedvalue)) / ((givenvalue + predictedvalue) / 2)) * 100
+                    percentdiff += self.getPercentageDiff(givenvalue, predictedvalue)
             else:
                 percentdiff += 100000
 
@@ -259,7 +263,9 @@ class Agent:
         finalanslist = self.rankAnswers(finalansdict)
         return finalanslist
 
+    # transformation function
     def getFillRatio(self, imglist, target):
+        # getting black pixel ratio from image list that is passed in
         fillratiolist = []
         for img in imglist:
             blackCount = 0
@@ -277,11 +283,14 @@ class Agent:
 
         print("FILL RATIO LIST: ")
         print(fillratiolist)
+
+        # finding geometric progression between ratios
         if len(fillratiolist) == 2:
             # print("2x2")
             value1 = fillratiolist[0]*1000
             value2 = fillratiolist[1]*1000
-            fr = (abs((value2 - value1))/((value2 + value1)/2))*100
+            # fr = (abs((value2 - value1))/((value2 + value1)/2))*100
+            fr = self.getPercentageDiff(value2, value1)
 
         else:
             # finding percentage difference
@@ -291,12 +300,14 @@ class Agent:
             # print(value1)
 
             if value1 + value2 != 0:
-                fr1 = (abs((value2 - value1))/((value2 + value1)/2))*100
+                # fr1 = (abs((value2 - value1))/((value2 + value1)/2))*100
+                fr1 = self.getPercentageDiff(value2, value1)
             else:
                 fr1 = 0
 
             if value2 + value3 != 0:
-                fr2 = (abs((value3 - value2))/((value3 + value2)/2))*100
+                # fr2 = (abs((value3 - value2))/((value3 + value2)/2))*100
+                fr2 = self.getPercentageDiff(value3, value2)
 
             else:
                 fr2 = 0
@@ -316,7 +327,8 @@ class Agent:
                 fr = ((fr2+fr1)/2)
                 if target != '':
                     if target + fr != 0:
-                        perdiff = (abs((target - fr)) / ((target + fr) / 2)) * 100
+                        # perdiff = (abs((target - fr)) / ((target + fr) / 2)) * 100
+                        perdiff = self.getPercentageDiff(target, fr)
                     else:
                         perdiff = 0
 
@@ -327,7 +339,10 @@ class Agent:
         # print("FILL RATIO FOUND TO BE ----- %.2f" % (perdiff))
         return fr
 
+    # transformation function
     def getDifference(self, imglist, target):
+        # finding pixel difference between images using the get distance function
+        # get distance function finds euclidean distance for each RGB pixel value
         if len(imglist) == 2:
             img1 = imglist[0]
             img2 = imglist[1]
@@ -335,6 +350,8 @@ class Agent:
             print("<><><><><> dist1 -------- %.2f" % (dist))
             return dist
 
+        # if 3x3 matrix then find percentage difference between img1, img2 difference and
+        # img2, img3 difference
         else:
             img1 = imglist[0]
             img2 = imglist[1]
@@ -347,7 +364,8 @@ class Agent:
 
             if dist1 + dist2 != 0:
                 print("FINDING --- PERCENT DIFFERENCE FOR IMG DIFF VALUES")
-                diff = (abs(dist1-dist2)/((dist1+dist2)/2))*100
+                # diff = (abs(dist1-dist2)/((dist1+dist2)/2))*100
+                diff = self.getPercentageDiff(dist1, dist2)
                 print(diff)
             else:
                 diff = 0
@@ -362,7 +380,8 @@ class Agent:
                     if target != 0:
                         if target + diff != 0:
                             # print("%.2f" % (dist))
-                            perdiff = (abs((target - diff)) / ((target + diff) / 2)) * 100
+                            # perdiff = (abs((target - diff)) / ((target + diff) / 2)) * 100
+                            perdiff = self.getPercentageDiff(target, diff)
                         else:
                             perdiff = 0
 
@@ -378,7 +397,10 @@ class Agent:
 
             # h = ImageChops.difference(imglist[0], imglist[1]).histogram()
 
+    # generic function
     def getDistance(self, img1, img2):
+        # given two images find euclidean distance between each pixel value (RGB)
+        # returns total distance between two images
         img1 = img1.convert('RGB')
         img2 = img2.convert('RGB')
         imgd1 = list(img1.getdata())
@@ -395,3 +417,45 @@ class Agent:
 
         else:
             print('ERROR: IN getDistance function ---  images do not have same number of pixels')
+
+    # generic function
+    def getPercentageDiff(self, x, y):
+        percentdiff = (abs(x - y) / ((x + y) / 2))*100
+        return percentdiff
+
+    # transformation function
+    def getFlipDiff(self, imglist, target):
+        if len(imglist) == 2:
+            img1 = imglist[0]
+            img2 = imglist[1]
+            flipimg1 = ImageOps.flip(img1)
+            dist = self.getDistance(flipimg1, img2)
+            return dist
+
+        else:
+            return 'na'
+        # for now flip is not required in 3x3 images
+        '''
+        else:
+            img1 = imglist[0]
+            img2 = imglist[1]
+            img3 = imglist[2]
+            flipimg1 = ImageOps.flip(img1)
+            dist1 = self.getDistance(flipimg1, img2)
+
+            flipimg2 = ImageOps.flip(img2)
+            dist2 = self.getDistance(flipimg2, img3)
+        '''
+
+    # transformation function
+    def getInvertdiff(self, imglist, target):
+        if len(imglist) == 2:
+            img1 = imglist[0]
+            img2 = imglist[1]
+            invertimg1 = ImageOps.invert(img1)
+            dist = self.getDistance(invertimg1, img2)
+            return dist
+
+        # for now invert is not required in 3x3 images
+        else:
+            return 'na'
