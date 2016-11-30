@@ -91,10 +91,10 @@ class Agent:
             # img2 = Image.open(questions['B'])
 
             horizontaltrans = self.FindPatterns(row, -1)
-            #verticaltrans = self.findPatterns(col)
+            #verticaltrans = self.FindPatterns(col, -1)
 
             hans = self.FindAnswer(horizontaltrans, r, a)
-            #vans = self.findAnswers(verticaltrans, c)
+            #Svans = self.FindAnswer(verticaltrans, c, a)
 
             hansorder = self.rankAnswers(hans)
             #vansorder = self.rankAnswers(vans)
@@ -191,22 +191,24 @@ class Agent:
                 transformations['fill'] = fill
                 fillList = self.GetFillRatio(imglist, transformations['fill'])
                 if count == 1: # for A,B,C
-                    val1 = fillList[0]
-                    val2 = fillList[1]
-                    val3 = fillList[2]
-                    rst1 = abs((val3 - val2 - val1))
+                    val1 = round(fillList[0], 2)
+                    val2 = round(fillList[1], 2)
+                    val3 = round(fillList[2], 2)
+                    rst1 = abs((val3 - val2)- (val2 - val1))
                     print('result in diff of 1 %.2f' %rst1)
                     if number != -1:
+                        number = abs(number)
+                        number = round(number, 2)
                         percentDiff = self.getPercentageDiff(rst1, number)
                         description['number'] = rst1
                         description['percentageDifference'] = percentDiff
                         print('description ')
                         print(description)
                 elif count == 2: # for D,E,F
-                    val1 = fillList[0]
-                    val2 = fillList[1]
-                    val3 = fillList[2]
-                    rst2 = abs((val3 - val2 - val1))
+                    val1 = round(fillList[0], 2)
+                    val2 = round(fillList[1], 2)
+                    val3 = round(fillList[2], 2)
+                    rst2 = abs((val3 - val2)- (val2 - val1))
                     print('result in diff of 2 %.2f' % rst2)
                     percentDiff = self.getPercentageDiff(rst1, rst2)
                     description['number'] = abs((rst2 - rst1))
@@ -529,6 +531,9 @@ class Agent:
 
     # generic function
     def getPercentageDiff(self, x, y):
+        if x == 0 or y == 0:
+            rst = abs((x-y))
+            return rst
         percentdiff = (abs(x - y) / ((x + y) / 2))*100
         return percentdiff
 
