@@ -15,7 +15,6 @@ from PIL import ImageChops
 from PIL import ImageOps
 from decimal import Decimal
 
-import numpy
 import math
 import collections
 import operator
@@ -54,12 +53,13 @@ class Agent:
         global questions
         global problem
         global answers
+        global probA
 
         pname = p.name
         ptype = p.problemType
         figures = p.figures
 
-        if "Basic Problem B-12" in pname:
+        if "Basic Problem C" in pname:
             print(pname + "\n" + ptype)
 
             if "2x2" in ptype:
@@ -77,6 +77,9 @@ class Agent:
 
             # traverse through each object in problem and save it in a dictionary called problem
             self.getObjects(figures)
+            lenOfDict = len(problem)
+            if lenOfDict > 14:
+                a = ['1', '2', '3', '4', '5', '6', '7', '8']
 
             # traverse through problem dictionary and order questions and answers in different dictionaries
             self.fillQA(problem, q, a)
@@ -87,25 +90,25 @@ class Agent:
             # img1 = Image.open(questions['A'])
             # img2 = Image.open(questions['B'])
 
-            horizontaltrans = self.findPatterns(row)
-            verticaltrans = self.findPatterns(col)
+            horizontaltrans = self.FindPatterns(row, -1)
+            #verticaltrans = self.FindPatterns(col, -1)
 
-            hans = self.findAnswers(horizontaltrans, r)
-            vans = self.findAnswers(verticaltrans, c)
+            hans = self.FindAnswer(horizontaltrans, r, a)
+            #Svans = self.FindAnswer(verticaltrans, c, a)
 
             hansorder = self.rankAnswers(hans)
-            vansorder = self.rankAnswers(vans)
+            #vansorder = self.rankAnswers(vans)
 
             print("------------- Answers for horizontal trans -------------")
             print(hansorder)
 
-            print("------------- Answers for vertical trans -------------")
-            print(vansorder)
+            #print("------------- Answers for vertical trans -------------")
+            #print(vansorder)
 
-            finalans = self.findBestAnswer(hansorder, vansorder)
+            #finalans = self.findBestAnswer(hansorder, vansorder)
 
             print("------------- Answers found in order of probability -------------")
-            print(finalans)
+            #print(finalans)
             #img1 = Image.open("Problems/Basic Problems B/Basic Problem B-12/A.png")
             #img2 = Image.open("Problems/Basic Problems B/Basic Problem B-12/B.png")
 
@@ -161,6 +164,64 @@ class Agent:
             answers[j] = p[j]
             qna[j] = p[j]
 
+    def FindPatterns(self, cmpList, number):
+        description = {'number': '', 'percentageDifference': ''}
+        transformations = {'fill': '', 'difference': '', 'flip': '', 'mirror': ''}
+        print('------------------------ FINDING PATTERNS ....... --------------------------')
+        count = 1 # count to 2
+        fillList = []
+        rst1 = 0
+        rst2 = 0
+        for a in cmpList:
+            imglist = []
+            for b in a:
+                print("img name" + b)
+                imgpath = qna[b]
+                print(imgpath)
+                img = Image.open(imgpath)
+                imglist.append(img)
+
+            # end of inner loop we have list of images in imglist for a given row/col
+            # now we can find different transformations for given images
+            print('finished getting all images in row/col .........')
+
+            # FILL TRANSFORMATION
+            if transformations['fill'] != 'nal':
+                #fill = self.getFillRatio(imglist, transformations['fill'])
+                #transformations['fill'] = fill
+                fillList = self.GetFillRatio(imglist, transformations['fill'])
+                print(fillList)
+                if count == 1: # for A,B,C
+                    val1 = round(fillList[0], 2)
+                    val2 = round(fillList[1], 2)
+                    val3 = round(fillList[2], 2)
+                    rst1 = abs((val3 - val2)- (val2 - val1))
+                    print('result in diff of 1 %.2f' %rst1)
+                    if number != -1:
+                        number = round(number, 2)
+                        percentDiff = self.GetDiff(rst1, number)
+                        description['number'] = rst1
+                        description['percentageDifference'] = percentDiff
+                        print('description ')
+                        print(description)
+                elif count == 2: # for D,E,F
+                    val1 = round(fillList[0], 2)
+                    val2 = round(fillList[1], 2)
+                    val3 = round(fillList[2], 2)
+                    rst2 = abs((val3 - val2)- (val2 - val1))
+                    print('result in diff of 2 %.2f' % rst2)
+                    percentDiff = self.GetDiff(rst1, rst2)
+                    description['number'] = abs((rst2 - rst1))
+                    description['percentageDifference'] = percentDiff
+                    print('description ')
+                    print(description)
+                count+=1
+        return description
+
+
+
+
+
     def findPatterns(self, cmpList):
         transformations = {'fill': '', 'difference': '', 'flip': '', 'mirror': ''}
         print('------------------------ FINDING PATTERNS ....... --------------------------')
@@ -198,6 +259,24 @@ class Agent:
         print("--------- PATTERNS FOUND ------------")
         print(transformations)
         return transformations
+
+    def FindAnswer(self, description, r, a):
+        numberDiff = description['number']
+        probableanswers = {}
+        print('Searching for answers ........')
+        for i in a:
+            imglist = list(r)
+            imglist.append(i)
+            imageList = [imglist]
+            desc = self.FindPatterns(imageList, numberDiff)
+            #prob = self.comparePatterns(description, desc)
+            print('Result from answers')
+            print(desc)
+            probableanswers[i] = desc['percentageDifference']
+
+        print (probableanswers)
+        return probableanswers
+
 
     def findAnswers(self, transformations, rc):
         global ptype
@@ -252,6 +331,7 @@ class Agent:
         # print(percentdiff)
         return percentdiff
 
+
     def rankAnswers(self, dict):
         sortedlist = sorted(dict.items(), key=operator.itemgetter(1))
         anslist = []
@@ -272,6 +352,23 @@ class Agent:
                     break
         finalanslist = self.rankAnswers(finalansdict)
         return finalanslist
+
+    def GetFillRatio(self, imglist, target):
+        fillratiolist = []
+        for img in imglist:
+            blackCount = 0
+            totalCount = 0
+            img = img.convert('RGB')
+            pixels = list(img.getdata())
+
+            for p in pixels:
+                # print(p)
+                if p == (0, 0, 0):
+                    blackCount += 1
+                totalCount += 1
+            fillratio = blackCount / totalCount
+            fillratiolist.append(fillratio)
+        return fillratiolist
 
     # transformation function
     def getFillRatio(self, imglist, target):
@@ -297,16 +394,16 @@ class Agent:
         # finding geometric progression between ratios
         if len(fillratiolist) == 2:
             # print("2x2")
-            value1 = fillratiolist[0]*1000
-            value2 = fillratiolist[1]*1000
+            value1 = fillratiolist[0]
+            value2 = fillratiolist[1]
             # fr = (abs((value2 - value1))/((value2 + value1)/2))*100
             fr = self.getPercentageDiff(value2, value1)
 
         else:
             # finding percentage difference
-            value1 = fillratiolist[0]*1000
-            value2 = fillratiolist[1]*1000
-            value3 = fillratiolist[2]*1000
+            value1 = fillratiolist[0]
+            value2 = fillratiolist[1]
+            value3 = fillratiolist[2]
             # print(value1)
 
             if value1 + value2 != 0:
@@ -432,8 +529,14 @@ class Agent:
         else:
             print('ERROR: IN getDistance function ---  images do not have same number of pixels')
 
+    def GetDiff(self, x,y):
+        return abs(x-y)
+
     # generic function
     def getPercentageDiff(self, x, y):
+        if x == 0 or y == 0:
+            rst = abs(y-x)
+            return rst
         percentdiff = (abs(x - y) / ((x + y) / 2))*100
         return percentdiff
 
