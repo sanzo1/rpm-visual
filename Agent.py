@@ -186,10 +186,11 @@ class Agent:
             print('finished getting all images in row/col .........')
 
             # FILL TRANSFORMATION
-            if transformations['fill'] != 'na':
-                fill = self.getFillRatio(imglist, transformations['fill'])
-                transformations['fill'] = fill
+            if transformations['fill'] != 'nal':
+                #fill = self.getFillRatio(imglist, transformations['fill'])
+                #transformations['fill'] = fill
                 fillList = self.GetFillRatio(imglist, transformations['fill'])
+                print(fillList)
                 if count == 1: # for A,B,C
                     val1 = round(fillList[0], 2)
                     val2 = round(fillList[1], 2)
@@ -197,9 +198,8 @@ class Agent:
                     rst1 = abs((val3 - val2)- (val2 - val1))
                     print('result in diff of 1 %.2f' %rst1)
                     if number != -1:
-                        number = abs(number)
                         number = round(number, 2)
-                        percentDiff = self.getPercentageDiff(rst1, number)
+                        percentDiff = self.GetDiff(rst1, number)
                         description['number'] = rst1
                         description['percentageDifference'] = percentDiff
                         print('description ')
@@ -210,7 +210,7 @@ class Agent:
                     val3 = round(fillList[2], 2)
                     rst2 = abs((val3 - val2)- (val2 - val1))
                     print('result in diff of 2 %.2f' % rst2)
-                    percentDiff = self.getPercentageDiff(rst1, rst2)
+                    percentDiff = self.GetDiff(rst1, rst2)
                     description['number'] = abs((rst2 - rst1))
                     description['percentageDifference'] = percentDiff
                     print('description ')
@@ -529,10 +529,13 @@ class Agent:
         else:
             print('ERROR: IN getDistance function ---  images do not have same number of pixels')
 
+    def GetDiff(self, x,y):
+        return abs(x-y)
+
     # generic function
     def getPercentageDiff(self, x, y):
         if x == 0 or y == 0:
-            rst = abs((x-y))
+            rst = abs(y-x)
             return rst
         percentdiff = (abs(x - y) / ((x + y) / 2))*100
         return percentdiff
